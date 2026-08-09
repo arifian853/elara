@@ -77,7 +77,6 @@ async def list_public_confessions(limit: int = 50):
             """
             SELECT id, message, reply, reply_created_at, created_at, is_replied
             FROM confessions
-            WHERE is_replied = true
             ORDER BY created_at DESC
             LIMIT $1
             """,
