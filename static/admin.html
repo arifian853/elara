@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elara Admin Dashboard — Minimalist Brutalism</title>
+  <!-- Google Fonts: Lexend Deca (Headings) & Inclusive Sans (Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inclusive+Sans:ital@0;1&family=Lexend+Deca:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            parchment: '#f5f4ed',
+            ivory: '#faf9f5',
+            nearblack: '#141413',
+            darksurface: '#30302e',
+            terracotta: '#c96442',
+            terracottadark: '#b55333',
+            coral: '#d97757',
+            bordercream: '#e8e6dc',
+          },
+          fontFamily: {
+            heading: ['Lexend Deca', 'sans-serif'],
+            sans: ['Inclusive Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { border-radius: 0px !important; } /* Minimalist Brutalism: rounded-none strict */
+    body { background-color: #f5f4ed; color: #141413; font-family: 'Inclusive Sans', sans-serif; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Lexend Deca', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .btn-terracotta { background-color: #c96442; color: #ffffff; border: 1px solid #141413; transition: all 0.15s ease; }
+    .btn-terracotta:hover { background-color: #b55333; }
+    .card-brutal { background-color: #faf9f5; border: 1px solid #141413; }
+    .card-brutal-hover { transition: border-color 0.2s ease, transform 0.15s ease; }
+    .card-brutal-hover:hover { border-color: #c96442; }
+    .tab-active { background-color: #141413; color: #faf9f5; border: 1px solid #141413; }
+    .tab-inactive { background-color: #faf9f5; color: #141413; border: 1px solid #141413; }
+    .tab-inactive:hover { background-color: #e8e6dc; }
+    svg { display: inline-block; vertical-align: middle; }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+  <!-- LOGIN OVERLAY / SCREEN (If not authenticated) -->
+  <div id="loginScreen" class="fixed inset-0 bg-parchment z-50 flex items-center justify-center p-4">
+    <div class="card-brutal p-8 max-w-md w-full border-2 border-nearblack shadow-2xl space-y-6">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="shield-check" class="w-6 h-6 text-terracotta"></i>
+          <h2 class="text-xl font-bold font-heading uppercase">ELARA ADMIN LOGIN</h2>
+        </div>
+        <p class="text-xs mono text-nearblack/70">Masukkan username & password untuk mengakses console.</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase mono mb-1">Username:</label>
+          <input type="text" id="loginUsername" required value="admin"
+            class="w-full bg-ivory border border-nearblack p-3 text-xs mono focus:outline-none focus:border-terracotta" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase mono mb-1">Password:</label>
+          <input type="password" id="loginPassword" required placeholder="Masukkan Admin Token / Password"
+            class="w-full bg-ivory border border-nearblack p-3 text-xs mono focus:outline-none focus:border-terracotta" />
+        </div>
+        <div id="loginError" class="hidden text-xs mono font-bold text-rose-600 bg-rose-500/10 p-2 border border-rose-500/20"></div>
+        <button type="submit" class="btn-terracotta w-full py-3 text-xs font-bold uppercase mono flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i> Login ke Console
+        </button>
+      </form>
+
+      <div class="pt-4 border-t border-nearblack/10 text-[11px] mono text-nearblack/60 text-center flex items-center justify-center gap-1">
+        <i data-lucide="file-code" class="w-3.5 h-3.5 text-terracotta"></i>
+        FastAPI Swagger Docs di <a href="/docs" target="_blank" class="text-terracotta underline font-bold">/docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="max-w-7xl mx-auto mb-8 border-b-2 border-nearblack pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="cpu" class="w-7 h-7 text-terracotta"></i>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">ELARA ADMIN // DASHBOARD</h1>
+      </div>
+      <p class="text-xs md:text-sm text-nearblack/70 mono">Integrated FastAPI Console — Minimalist Brutalism</p>
+    </div>
+
+    <!-- User Profile & Logout -->
+    <div class="flex items-center gap-3 w-full md:w-auto">
+      <a href="/docs" target="_blank" class="text-xs font-bold uppercase mono bg-ivory border border-nearblack px-3 py-1.5 hover:bg-bordercream flex items-center gap-1.5">
+        <i data-lucide="book-open" class="w-4 h-4"></i> Swagger /docs
+      </a>
+      <div class="flex items-center gap-2 bg-ivory border border-nearblack px-3 py-1.5 text-xs mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="userStatusLabel">Admin Authenticated</span>
+      </div>
+      <button onclick="handleLogout()" class="bg-rose-600 text-white border border-nearblack px-4 py-1.5 text-xs font-bold uppercase mono hover:bg-rose-700 flex items-center gap-1.5">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Stats Overview (Bento Grid) -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="card-brutal p-4 card-brutal-hover">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs mono uppercase text-nearblack/60 font-bold">Project Leads</span>
+          <i data-lucide="briefcase" class="w-4 h-4 text-terracotta"></i>
+        </div>
+        <span id="statLeads" class="text-3xl font-bold font-heading text-terracotta">0</span>
+        <span class="text-[10px] mono text-nearblack/50 block mt-1">Total Leads Ingested</span>
+      </div>
+      <div class="card-brutal p-4 card-brutal-hover">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs mono uppercase text-nearblack/60 font-bold">Knowledge Docs</span>
+          <i data-lucide="files" class="w-4 h-4 text-nearblack"></i>
+        </div>
+        <span id="statDocs" class="text-3xl font-bold font-heading text-nearblack">0</span>
+        <span class="text-[10px] mono text-nearblack/50 block mt-1">PDF/MD/Repo/Text Items</span>
+      </div>
+      <div class="card-brutal p-4 card-brutal-hover">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs mono uppercase text-nearblack/60 font-bold">Vector Chunks</span>
+          <i data-lucide="database" class="w-4 h-4 text-nearblack"></i>
+        </div>
+        <span id="statChunks" class="text-3xl font-bold font-heading text-nearblack">0</span>
+        <span class="text-[10px] mono text-nearblack/50 block mt-1">768-dim Embeddings</span>
+      </div>
+      <div class="card-brutal p-4 card-brutal-hover">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs mono uppercase text-nearblack/60 font-bold">System Health</span>
+          <i data-lucide="activity" class="w-4 h-4 text-emerald-600"></i>
+        </div>
+        <span id="statHealth" class="text-xl font-bold font-heading text-emerald-600">CONNECTED</span>
+        <span class="text-[10px] mono text-nearblack/50 block mt-1">FastAPI + Supabase</span>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex flex-wrap gap-2 border-b border-nearblack/20 pb-4">
+      <button onclick="switchTab('chat')" id="tab-chat" class="tab-active px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="message-square" class="w-4 h-4"></i> Chat Playground
+      </button>
+      <button onclick="switchTab('docs')" id="tab-docs" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="library" class="w-4 h-4"></i> Knowledge Base
+      </button>
+      <button onclick="switchTab('leads')" id="tab-leads" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="briefcase" class="w-4 h-4"></i> Project Leads
+      </button>
+      <button onclick="switchTab('llm')" id="tab-llm" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="brain-circuit" class="w-4 h-4"></i> LLM Connections
+      </button>
+      <button onclick="switchTab('health')" id="tab-health" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="heart-pulse" class="w-4 h-4"></i> System Health
+      </button>
+      <button onclick="switchTab('repo')" id="tab-repo" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="git-branch" class="w-4 h-4"></i> Ingest Repo
+      </button>
+      <button onclick="switchTab('upload')" id="tab-upload" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="upload-cloud" class="w-4 h-4"></i> Ingest File/Text
+      </button>
+      <button onclick="switchTab('confessions')" id="tab-confessions" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="mail" class="w-4 h-4"></i> Confessions
+      </button>
+      <button onclick="switchTab('prompts')" id="tab-prompts" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="sliders" class="w-4 h-4"></i> System Prompts
+      </button>
+      <button onclick="switchTab('users')" id="tab-users" class="tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5">
+        <i data-lucide="users" class="w-4 h-4"></i> Admin Users
+      </button>
+    </nav>
+
+    <!-- Tab 0: Interactive RAG Chat Playground -->
+    <section id="content-chat" class="space-y-4">
+      <div class="card-brutal p-6">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-nearblack/20">
+          <div>
+            <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+              <i data-lucide="bot" class="w-5 h-5 text-terracotta"></i> Elara RAG Chat Playground
+            </h2>
+            <p class="text-xs text-nearblack/70 mono">Uji coba percakapan langsung dengan Elara RAG pipeline (Groq + Gemini Embeddings + Gemma Reranker).</p>
+          </div>
+          <button onclick="clearChatHistory()" class="bg-parchment border border-nearblack px-3 py-1 text-xs font-bold mono hover:bg-bordercream">Clear Chat</button>
+        </div>
+
+        <div id="chatBox" class="h-96 overflow-y-auto p-4 bg-ivory border border-nearblack space-y-4 text-xs mono">
+          <div class="bg-parchment p-3 border border-nearblack max-w-xl">
+            <span class="font-bold text-terracotta">Elara:</span> Halo! Aku Elara, asisten virtual Arifian. Ada yang bisa aku bantu seputar layanan, portfolio, atau pembuatan proyek?
+          </div>
+        </div>
+
+        <form onsubmit="handleSendChatMessage(event)" class="mt-4 flex gap-2">
+          <input type="text" id="chatInput" required placeholder="Ketik pertanyaan untuk Elara (misal: 'Siapa itu Arifian?' atau 'Berapa harga bikin Web App?')..."
+            class="flex-1 bg-ivory border border-nearblack p-3 text-xs mono focus:outline-none focus:border-terracotta" />
+          <button type="submit" id="btnSendChat" class="btn-terracotta px-6 text-xs font-bold uppercase mono flex items-center gap-1">
+            <i data-lucide="send" class="w-4 h-4"></i> Kirim
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Tab 1: View Knowledge Base Documents -->
+    <section id="content-docs" class="hidden space-y-4">
+      <div class="card-brutal p-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-nearblack/20">
+          <div>
+            <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+              <i data-lucide="library" class="w-5 h-5 text-terracotta"></i> Knowledge Base Documents
+            </h2>
+            <p class="text-xs text-nearblack/70 mono">Semua dokumen, repositori, dan teks yang sudah di-chunk & di-embed ke Supabase pgvector.</p>
+          </div>
+          <button onclick="loadDocuments()" class="btn-terracotta px-3 py-1.5 text-xs font-bold mono">Refresh</button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs mono">
+            <thead>
+              <tr class="border-b border-nearblack bg-bordercream/50 uppercase text-[11px]">
+                <th class="p-3">Judul Dokumen</th>
+                <th class="p-3">Tipe Sumber</th>
+                <th class="p-3">Vector Chunks</th>
+                <th class="p-3">Storage Key / Metadata</th>
+                <th class="p-3">Tanggal Dibuat</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="docsTableBody">
+              <tr>
+                <td colspan="6" class="p-6 text-center text-nearblack/50">Memuat data dokumen...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Project Leads -->
+    <section id="content-leads" class="hidden space-y-4">
+      <div class="card-brutal p-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-nearblack/20">
+          <div>
+            <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+              <i data-lucide="briefcase" class="w-5 h-5 text-terracotta"></i> Project Request Leads
+            </h2>
+            <p class="text-xs text-nearblack/70 mono">Data penawaran dan brief proyek yang dikumpulkan oleh intake state machine Elara.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <select id="leadStatusFilter" onchange="loadLeads()" class="bg-ivory border border-nearblack px-3 py-1.5 text-xs mono">
+              <option value="all">Semua Status</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
+            <button onclick="loadLeads()" class="btn-terracotta px-3 py-1.5 text-xs font-bold mono">Refresh</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs mono">
+            <thead>
+              <tr class="border-b border-nearblack bg-bordercream/50 uppercase text-[11px]">
+                <th class="p-3">Status</th>
+                <th class="p-3">Layanan</th>
+                <th class="p-3">Deskripsi</th>
+                <th class="p-3">Budget</th>
+                <th class="p-3">Deadline</th>
+                <th class="p-3">Kontak</th>
+                <th class="p-3">Tanggal</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="leadsTableBody">
+              <tr>
+                <td colspan="8" class="p-6 text-center text-nearblack/50">Memuat data leads...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: LLM Connections Health Check -->
+    <section id="content-llm" class="hidden space-y-4">
+      <div class="card-brutal p-6">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-nearblack/20">
+          <div>
+            <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+              <i data-lucide="brain-circuit" class="w-5 h-5 text-terracotta"></i> LLM & AI Services Health Check
+            </h2>
+            <p class="text-xs text-nearblack/70 mono">Uji koneksi & latensi (ms) langsung ke seluruh layanan AI yang dipakai backend FastAPI.</p>
+          </div>
+          <button onclick="testLlmConnections()" id="btnTestLlm" class="btn-terracotta px-4 py-2 text-xs font-bold mono flex items-center gap-1.5">
+            <i data-lucide="zap" class="w-4 h-4"></i> Test Koneksi LLM Sekarang
+          </button>
+        </div>
+
+        <div id="llmHealthResults" class="grid md:grid-cols-3 gap-4 text-xs mono">
+          <div class="p-4 border border-nearblack bg-ivory">Klik tombol di atas untuk memulai pengujian koneksi LLM...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Infrastructure System Health Status -->
+    <section id="content-health" class="hidden space-y-4">
+      <div class="card-brutal p-6">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-nearblack/20">
+          <div>
+            <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+              <i data-lucide="heart-pulse" class="w-5 h-5 text-terracotta"></i> System Health & Infrastructure
+            </h2>
+            <p class="text-xs text-nearblack/70 mono">Status koneksi Supabase PostgreSQL pgvector, Cloudflare R2 Storage, & Telegram Bridge.</p>
+          </div>
+          <button onclick="loadSystemHealth()" class="btn-terracotta px-3 py-1.5 text-xs font-bold mono">Refresh Health</button>
+        </div>
+
+        <div id="systemHealthResults" class="space-y-3 text-xs mono">
+          <p class="text-nearblack/50">Memuat status kesehatan sistem...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Ingest GitHub Repo -->
+    <section id="content-repo" class="hidden space-y-4">
+      <div class="card-brutal p-6">
+        <h2 class="text-lg font-bold font-heading uppercase mb-1 flex items-center gap-2">
+          <i data-lucide="git-branch" class="w-5 h-5 text-terracotta"></i> Ingest Repositori GitHub
+        </h2>
+        <p class="text-xs text-nearblack/70 mono mb-6">Serap README, manifest dependensi (package.json/pyproject.toml), file tree, & metadata proyek ke Knowledge Base.</p>
+        
+        <form onsubmit="handleIngestRepo(event)" class="space-y-4 max-w-2xl">
+          <div>
+            <label class="block text-xs font-bold uppercase mono mb-2">URL Repositori GitHub:</label>
+            <input type="url" id="repoUrlInput" required placeholder="https://github.com/arifian853/portfolio-LTS"
+              class="w-full bg-ivory border border-nearblack p-3 text-xs mono focus:outline-none focus:border-terracotta" />
+          </div>
+          <button type="submit" id="btnIngestRepo" class="btn-terracotta px-6 py-2.5 text-xs font-bold uppercase mono flex items-center gap-1.5">
+            <i data-lucide="download-cloud" class="w-4 h-4"></i> Ingest Repositori Sekarang
+          </button>
+        </form>
+
+        <div id="repoIngestResult" class="hidden mt-6 p-4 border border-nearblack bg-ivory space-y-2 text-xs mono"></div>
+      </div>
+    </section>
+
+    <!-- Tab 6: Upload File & Ingest Raw Text -->
+    <section id="content-upload" class="hidden space-y-6">
+      <div class="card-brutal p-6">
+        <h2 class="text-lg font-bold font-heading uppercase mb-1 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-terracotta"></i> Upload Berkas Document (PDF/DOCX/CSV/MD/TXT)
+        </h2>
+        <p class="text-xs text-nearblack/70 mono mb-6">Mendukung berkas PDF (non-scanned), DOCX, CSV, MD, dan TXT. Berkas asli disimpan di Cloudflare R2.</p>
+
+        <form onsubmit="handleUploadFile(event)" class="space-y-4 max-w-2xl">
+          <div class="border-2 border-dashed border-nearblack p-8 text-center bg-ivory">
+            <input type="file" id="fileInput" required accept=".pdf,.docx,.csv,.md,.txt" class="block w-full text-xs mono text-nearblack file:mr-4 file:py-2 file:px-4 file:border file:border-nearblack file:text-xs file:font-bold file:mono file:bg-terracotta file:text-white hover:file:bg-terracottadark cursor-pointer" />
+          </div>
+          <button type="submit" id="btnUploadFile" class="btn-terracotta px-6 py-2.5 text-xs font-bold uppercase mono flex items-center gap-1.5">
+            <i data-lucide="upload" class="w-4 h-4"></i> Upload & Ingest Berkas
+          </button>
+        </form>
+
+        <div id="uploadResult" class="hidden mt-6 p-4 border border-nearblack bg-ivory space-y-2 text-xs mono"></div>
+      </div>
+
+      <div class="card-brutal p-6">
+        <h2 class="text-lg font-bold font-heading uppercase mb-1 flex items-center gap-2">
+          <i data-lucide="edit-3" class="w-5 h-5 text-terracotta"></i> Ingest Teks Biasa / Raw String
+        </h2>
+        <p class="text-xs text-nearblack/70 mono mb-6">Masukkan catatan teks langsung tanpa berkas untuk di-chunk dan di-embed ke Knowledge Base.</p>
+
+        <form onsubmit="handleIngestText(event)" class="space-y-4 max-w-2xl">
+          <div>
+            <label class="block text-xs font-bold uppercase mono mb-1">Judul Dokumen / Catatan:</label>
+            <input type="text" id="textTitleInput" required placeholder="Catatan Layanan & Pricing Arifian"
+              class="w-full bg-ivory border border-nearblack p-2.5 text-xs mono focus:outline-none focus:border-terracotta" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase mono mb-1">Isi Teks / Konten:</label>
+            <textarea id="textContentInput" rows="6" required placeholder="Tuliskan konten teks yang ingin dimasukkan ke Knowledge Base..."
+              class="w-full bg-ivory border border-nearblack p-3 text-xs mono focus:outline-none focus:border-terracotta"></textarea>
+          </div>
+          <button type="submit" id="btnIngestText" class="btn-terracotta px-6 py-2.5 text-xs font-bold uppercase mono flex items-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Ingest Teks Langsung
+          </button>
+        </form>
+
+        <div id="textIngestResult" class="hidden mt-6 p-4 border border-nearblack bg-ivory space-y-2 text-xs mono"></div>
+      </div>
+    </section>
+
+    <!-- Tab 7: Confessions -->
+    <section id="content-confessions" class="hidden space-y-4">
+      <div class="card-brutal p-6">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-nearblack/20">
+          <div>
+            <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+              <i data-lucide="mail" class="w-5 h-5 text-terracotta"></i> Pesan Anonim // Confessions
+            </h2>
+            <p class="text-xs text-nearblack/70 mono">Pesan yang dikirim oleh pengunjung halaman /message portofolio.</p>
+          </div>
+          <button onclick="loadConfessions()" class="btn-terracotta px-3 py-1.5 text-xs font-bold mono">Refresh</button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs mono">
+            <thead>
+              <tr class="border-b border-nearblack bg-bordercream/50 uppercase text-[11px]">
+                <th class="p-3">Waktu Spesifik</th>
+                <th class="p-3">IP Address</th>
+                <th class="p-3">Pesan Anonim</th>
+                <th class="p-3">Balasan Publik</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="confessionsTableBody">
+              <tr>
+                <td colspan="5" class="p-6 text-center text-nearblack/50">Memuat data confessions...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 8: System Prompts -->
+    <section id="content-prompts" class="hidden space-y-4">
+      <div class="card-brutal p-6">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-nearblack/20">
+          <div>
+            <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+              <i data-lucide="sliders" class="w-5 h-5 text-terracotta"></i> Dynamic System Prompt Manager
+            </h2>
+            <p class="text-xs text-nearblack/70 mono">Manajemen persona dan prompt sistem Elara. Prompt bawaan Elara selalu tersimpan aman.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="deactivateAllPrompts()" class="bg-parchment text-nearblack border border-nearblack px-3 py-1.5 text-xs font-bold mono hover:bg-bordercream">Set Default Prompt</button>
+            <button onclick="loadPrompts()" class="btn-terracotta px-3 py-1.5 text-xs font-bold mono">Refresh</button>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <form onsubmit="handleCreatePrompt(event)" class="space-y-4 bg-ivory p-4 border border-nearblack">
+            <h3 class="font-bold uppercase text-xs font-heading">Tambah System Prompt Baru</h3>
+            <div>
+              <label class="block text-[11px] mono uppercase font-bold mb-1">Nama Prompt:</label>
+              <input type="text" id="promptName" required placeholder="Elara Persona Custom v2" class="w-full bg-parchment border border-nearblack p-2 text-xs mono focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] mono uppercase font-bold mb-1">Deskripsi:</label>
+              <input type="text" id="promptDesc" placeholder="Prompt eksperimen gaya percakapan" class="w-full bg-parchment border border-nearblack p-2 text-xs mono focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] mono uppercase font-bold mb-1">Isi System Prompt ({context} placeholder otomatis):</label>
+              <textarea id="promptContent" rows="7" required placeholder="# IDENTITAS..." class="w-full bg-parchment border border-nearblack p-2 text-xs mono focus:outline-none"></textarea>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="promptIsActive" class="w-4 h-4 text-terracotta border-nearblack focus:ring-0" />
+              <label for="promptIsActive" class="text-xs mono font-bold">Setel sebagai Prompt Aktif Sekarang</label>
+            </div>
+            <button type="submit" class="btn-terracotta w-full py-2 text-xs font-bold uppercase mono">Simpan Prompt</button>
+          </form>
+
+          <div class="space-y-3" id="promptsListContainer">
+            <p class="text-xs mono text-nearblack/50">Memuat daftar prompt...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 9: Admin Users & Password Management -->
+    <section id="content-users" class="hidden space-y-6">
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Change Password Form -->
+        <div class="card-brutal p-6 space-y-4">
+          <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+            <i data-lucide="key-round" class="w-5 h-5 text-terracotta"></i> Ganti Password Admin
+          </h2>
+          <p class="text-xs text-nearblack/70 mono">Ubah password akun admin yang sedang login saat ini.</p>
+
+          <form onsubmit="handleChangePassword(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase mono mb-1">Password Lama:</label>
+              <input type="password" id="oldPasswordInput" required placeholder="Masukkan password lama"
+                class="w-full bg-ivory border border-nearblack p-2.5 text-xs mono focus:outline-none focus:border-terracotta" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase mono mb-1">Password Baru (min 6 karakter):</label>
+              <input type="password" id="newPasswordInput" required placeholder="Masukkan password baru"
+                class="w-full bg-ivory border border-nearblack p-2.5 text-xs mono focus:outline-none focus:border-terracotta" />
+            </div>
+            <button type="submit" class="btn-terracotta w-full py-2.5 text-xs font-bold uppercase mono flex items-center justify-center gap-1.5">
+              <i data-lucide="check-circle" class="w-4 h-4"></i> Update Password Sekarang
+            </button>
+          </form>
+        </div>
+
+        <!-- Add New Admin User Form -->
+        <div class="card-brutal p-6 space-y-4">
+          <h2 class="text-lg font-bold font-heading uppercase flex items-center gap-2">
+            <i data-lucide="user-plus" class="w-5 h-5 text-terracotta"></i> Tambah User Admin Baru
+          </h2>
+          <p class="text-xs text-nearblack/70 mono">Buat akun admin tambahan dengan kredensial terpisah.</p>
+
+          <form onsubmit="handleCreateAdminUser(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase mono mb-1">Username Baru:</label>
+              <input type="text" id="newAdminUsername" required placeholder="misal: admin2"
+                class="w-full bg-ivory border border-nearblack p-2.5 text-xs mono focus:outline-none focus:border-terracotta" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase mono mb-1">Password Baru:</label>
+              <input type="password" id="newAdminPassword" required placeholder="Password min 6 karakter"
+                class="w-full bg-ivory border border-nearblack p-2.5 text-xs mono focus:outline-none focus:border-terracotta" />
+            </div>
+            <button type="submit" class="btn-terracotta w-full py-2.5 text-xs font-bold uppercase mono flex items-center justify-center gap-1.5">
+              <i data-lucide="user-check" class="w-4 h-4"></i> Buat Akun Admin Baru
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="card-brutal p-6">
+        <h3 class="text-sm font-bold font-heading uppercase mb-3 flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4 text-terracotta"></i> Daftar Akun Admin
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs mono">
+            <thead>
+              <tr class="border-b border-nearblack bg-bordercream/50 uppercase text-[11px]">
+                <th class="p-3">Username</th>
+                <th class="p-3">User ID</th>
+                <th class="p-3">Tanggal Dibuat</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="3" class="p-4 text-center text-nearblack/50">Memuat daftar user...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Document Detail / Chunks Modal -->
+  <dialog id="docModal" class="p-0 border border-nearblack bg-ivory backdrop:bg-nearblack/60 max-w-2xl w-full">
+    <div class="p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-nearblack/20 pb-3">
+        <h3 class="font-bold font-heading uppercase text-sm" id="docModalTitle">Detail Dokumen & Chunks</h3>
+        <button onclick="document.getElementById('docModal').close()" class="text-xs font-bold mono">✕ TUTUP</button>
+      </div>
+      <div id="docModalBody" class="text-xs mono space-y-3 max-h-[60vh] overflow-y-auto"></div>
+      <div class="pt-3 border-t border-nearblack/20 flex justify-end">
+        <button onclick="document.getElementById('docModal').close()" class="btn-terracotta px-4 py-1.5 text-xs font-bold mono">Tutup</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Lead Detail Modal -->
+  <dialog id="leadModal" class="p-0 border border-nearblack bg-ivory backdrop:bg-nearblack/60 max-w-lg w-full">
+    <div class="p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-nearblack/20 pb-3">
+        <h3 class="font-bold font-heading uppercase text-sm">Detail Project Lead</h3>
+        <button onclick="document.getElementById('leadModal').close()" class="text-xs font-bold mono">✕ TUTUP</button>
+      </div>
+      <div id="leadModalBody" class="text-xs mono space-y-3"></div>
+      <div class="pt-3 border-t border-nearblack/20 flex gap-2">
+        <button onclick="updateStatus('contacted')" class="btn-terracotta flex-1 py-1.5 text-xs font-bold mono">Set Contacted</button>
+        <button onclick="updateStatus('won')" class="bg-emerald-600 text-white border border-nearblack flex-1 py-1.5 text-xs font-bold mono hover:bg-emerald-700">Set Won</button>
+        <button onclick="updateStatus('lost')" class="bg-rose-600 text-white border border-nearblack flex-1 py-1.5 text-xs font-bold mono hover:bg-rose-700">Set Lost</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Confession Reply Modal -->
+  <dialog id="replyModal" class="p-0 border border-nearblack bg-ivory backdrop:bg-nearblack/60 max-w-md w-full">
+    <div class="p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-nearblack/20 pb-3">
+        <h3 class="font-bold font-heading uppercase text-sm">Balas Pesan Anonim</h3>
+        <button onclick="document.getElementById('replyModal').close()" class="text-xs font-bold mono">✕ TUTUP</button>
+      </div>
+      <div id="replyModalBody" class="text-xs mono space-y-2"></div>
+      <textarea id="replyInput" rows="4" placeholder="Tulis balasan publik dari Arifian..." class="w-full bg-parchment border border-nearblack p-3 text-xs mono focus:outline-none"></textarea>
+      <button onclick="submitReply()" class="btn-terracotta w-full py-2 text-xs font-bold uppercase mono">Kirim Balasan Publik</button>
+    </div>
+  </dialog>
+
+  <script>
+    let authToken = localStorage.getItem('elara_jwt_token') || localStorage.getItem('elara_admin_token') || '';
+
+    // Initialize Lucide Icons
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+
+    checkAuth();
+
+    async function checkAuth() {
+      if (!authToken) {
+        showLoginScreen();
+        return;
+      }
+      try {
+        const res = await fetch('/admin/auth/me', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.ok) {
+          const user = await res.json();
+          document.getElementById('userStatusLabel').innerText = `Logged in: ${user.username}`;
+          document.getElementById('loginScreen').classList.add('hidden');
+          loadStats();
+        } else {
+          showLoginScreen();
+        }
+      } catch (e) {
+        showLoginScreen();
+      }
+    }
+
+    function showLoginScreen() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 50);
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const errDiv = document.getElementById('loginError');
+      errDiv.classList.add('hidden');
+
+      try {
+        const res = await fetch('/admin/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.access_token) {
+          authToken = data.access_token;
+          localStorage.setItem('elara_jwt_token', data.access_token);
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('userStatusLabel').innerText = `Logged in: ${username}`;
+          loadStats();
+        } else {
+          errDiv.innerText = data.detail || 'Username atau password salah!';
+          errDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        errDiv.innerText = 'Gagal menghubungi server!';
+        errDiv.classList.remove('hidden');
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('elara_jwt_token');
+      localStorage.removeItem('elara_admin_token');
+      authToken = '';
+      showLoginScreen();
+    }
+
+    function switchTab(tabName) {
+      ['chat', 'docs', 'leads', 'llm', 'health', 'repo', 'upload', 'confessions', 'prompts', 'users'].forEach(t => {
+        document.getElementById(`content-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).className = 'tab-inactive px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5';
+      });
+      document.getElementById(`content-${tabName}`).classList.remove('hidden');
+      document.getElementById(`tab-${tabName}`).className = 'tab-active px-4 py-2 text-xs font-bold uppercase mono flex items-center gap-1.5';
+
+      if (tabName === 'docs') loadDocuments();
+      if (tabName === 'leads') loadLeads();
+      if (tabName === 'llm') testLlmConnections();
+      if (tabName === 'health') loadSystemHealth();
+      if (tabName === 'confessions') loadConfessions();
+      if (tabName === 'prompts') loadPrompts();
+      if (tabName === 'users') loadAdminUsers();
+
+      setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 50);
+    }
+
+    async function fetchApi(path, options = {}) {
+      options.headers = {
+        'X-Admin-Token': authToken,
+        'Authorization': `Bearer ${authToken}`,
+        ...(options.headers || {}),
+      };
+      const res = await fetch(path, options);
+      if (res.status === 401) {
+        handleLogout();
+        throw new Error('Unauthorized');
+      }
+      return res;
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetchApi('/admin/stats');
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('statLeads').innerText = data.leads || 0;
+          document.getElementById('statDocs').innerText = data.documents || 0;
+          document.getElementById('statChunks').innerText = data.chunks || 0;
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    // ── Chat Playground ──────────────────────────────────────────────
+    let chatHistory = [];
+    async function handleSendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML += `
+        <div class="bg-ivory border border-nearblack p-3 text-right max-w-xl ml-auto">
+          <span class="font-bold text-nearblack">Pengunjung:</span> ${msg}
+        </div>
+      `;
+      input.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      const botBubbleId = 'botMsg-' + Date.now();
+      chatBox.innerHTML += `
+        <div id="${botBubbleId}" class="bg-parchment p-3 border border-nearblack max-w-xl">
+          <span class="font-bold text-terracotta">Elara:</span> <span class="animate-pulse">Sedang mencari jawaban dari Knowledge Base...</span>
+        </div>
+      `;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg, history: chatHistory })
+        });
+        const data = await res.json();
+        const botBubble = document.getElementById(botBubbleId);
+        botBubble.innerHTML = `<span class="font-bold text-terracotta">Elara:</span> ${data.response}`;
+
+        chatHistory.push({ role: 'user', content: msg });
+        chatHistory.push({ role: 'assistant', content: data.response });
+      } catch (err) {
+        document.getElementById(botBubbleId).innerHTML = `<span class="font-bold text-rose-600">Error: Gagal memproses chat.</span>`;
+      }
+    }
+
+    function clearChatHistory() {
+      chatHistory = [];
+      document.getElementById('chatBox').innerHTML = `
+        <div class="bg-parchment p-3 border border-nearblack max-w-xl">
+          <span class="font-bold text-terracotta">Elara:</span> Riwayat chat dibersihkan. Silakan ajukan pertanyaan baru!
+        </div>
+      `;
+    }
+
+    // ── LLM Connections Health Check ─────────────────────────────────
+    async function testLlmConnections() {
+      const container = document.getElementById('llmHealthResults');
+      container.innerHTML = '<div class="p-4 border border-nearblack bg-ivory col-span-3">Menguji koneksi ke Groq & Google AI Studio... Mohon tunggu...</div>';
+      try {
+        const res = await fetchApi('/admin/llm-health');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        container.innerHTML = data.services.map(s => `
+          <div class="card-brutal p-4 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-xs uppercase font-heading">${s.service}</span>
+              <span class="px-2 py-0.5 border border-nearblack font-bold uppercase text-[10px] ${s.status === 'HEALTHY' ? 'bg-emerald-400 text-nearblack' : 'bg-rose-500 text-white'}">${s.status}</span>
+            </div>
+            <p class="text-[11px] text-nearblack/70"><b>Model:</b> <code>${s.model}</code></p>
+            <p class="text-terracotta font-bold text-sm">Latensi: ${s.latencyMs} ms</p>
+            ${s.sample ? `<p class="text-[10px] text-nearblack/60 truncate">Sample output: "${s.sample}"</p>` : ''}
+            ${s.error ? `<p class="text-[10px] text-rose-600 font-bold">Error: ${s.error}</p>` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = '<div class="p-4 border border-rose-600 text-rose-600 font-bold bg-ivory col-span-3">Gagal menguji koneksi LLM.</div>';
+      }
+    }
+
+    // ── System Health ────────────────────────────────────────────────
+    async function loadSystemHealth() {
+      const container = document.getElementById('systemHealthResults');
+      container.innerHTML = '<p class="text-nearblack/50">Memuat status kesehatan sistem...</p>';
+      try {
+        const res = await fetchApi('/admin/system-health');
+        if (!res.ok) return;
+        const data = await res.json();
+        const c = data.components;
+
+        container.innerHTML = `
+          <div class="card-brutal p-4 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-sm uppercase font-heading">PostgreSQL Database (Supabase Pooler)</p>
+              <p class="text-xs text-nearblack/60">${c.database.engine || '-'}</p>
+            </div>
+            <span class="px-3 py-1 border border-nearblack font-bold uppercase text-xs ${c.database.status === 'CONNECTED' ? 'bg-emerald-400 text-nearblack' : 'bg-rose-500 text-white'}">${c.database.status}</span>
+          </div>
+          <div class="card-brutal p-4 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-sm uppercase font-heading">Cloudflare R2 Object Storage</p>
+              <p class="text-xs text-nearblack/60">Bucket: ${c.r2Storage.bucket || '-'}</p>
+            </div>
+            <span class="px-3 py-1 border border-nearblack font-bold uppercase text-xs ${c.r2Storage.status === 'CONNECTED' ? 'bg-emerald-400 text-nearblack' : 'bg-amber-400 text-nearblack'}">${c.r2Storage.status}</span>
+          </div>
+          <div class="card-brutal p-4 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-sm uppercase font-heading">Telegram Bot Outbound Bridge</p>
+              <p class="text-xs text-nearblack/60">Token: ${c.telegramBridge.botTokenMasked} | Owner Chat ID: ${c.telegramBridge.chatId}</p>
+            </div>
+            <span class="px-3 py-1 border border-nearblack font-bold uppercase text-xs ${c.telegramBridge.status === 'CONFIGURED' ? 'bg-emerald-400 text-nearblack' : 'bg-rose-500 text-white'}">${c.telegramBridge.status}</span>
+          </div>
+        `;
+      } catch (e) {
+        container.innerHTML = '<p class="text-rose-600 font-bold">Gagal memuat status sistem.</p>';
+      }
+    }
+
+    // ── Admin Users & Password ───────────────────────────────────────
+    async function loadAdminUsers() {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-nearblack/50">Memuat daftar user...</td></tr>';
+      try {
+        const res = await fetchApi('/admin/users');
+        if (!res.ok) return;
+        const users = await res.json();
+        tbody.innerHTML = users.map(u => `
+          <tr class="border-b border-nearblack/20 hover:bg-ivory">
+            <td class="p-3 font-bold text-terracotta">${u.username}</td>
+            <td class="p-3 font-mono text-nearblack/60 text-[11px]">${u.id}</td>
+            <td class="p-3 text-nearblack/60">${u.createdAt}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-rose-600 font-bold">Gagal memuat user admin.</td></tr>';
+      }
+    }
+
+    async function handleChangePassword(e) {
+      e.preventDefault();
+      const old_password = document.getElementById('oldPasswordInput').value.trim();
+      const new_password = document.getElementById('newPasswordInput').value.trim();
+
+      try {
+        const res = await fetchApi('/admin/users/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ old_password, new_password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('Password berhasil diperbarui! Silakan gunakan password baru pada login berikutnya.');
+          document.getElementById('oldPasswordInput').value = '';
+          document.getElementById('newPasswordInput').value = '';
+        } else {
+          alert('Gagal: ' + (data.detail || 'Password lama salah!'));
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function handleCreateAdminUser(e) {
+      e.preventDefault();
+      const username = document.getElementById('newAdminUsername').value.trim();
+      const password = document.getElementById('newAdminPassword').value.trim();
+
+      try {
+        const res = await fetchApi('/admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert(`Akun admin '${username}' berhasil dibuat!`);
+          document.getElementById('newAdminUsername').value = '';
+          document.getElementById('newAdminPassword').value = '';
+          loadAdminUsers();
+        } else {
+          alert('Gagal: ' + (data.detail || 'Gagal membuat user'));
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ── Standard Admin Tabs ──────────────────────────────────────────
+    async function loadDocuments() {
+      const tbody = document.getElementById('docsTableBody');
+      tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-nearblack/50">Memuat data dokumen...</td></tr>';
+      try {
+        const res = await fetchApi('/admin/documents');
+        if (!res.ok) return;
+        const docs = await res.json();
+
+        if (docs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-nearblack/50">Belum ada dokumen di Knowledge Base.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = docs.map(d => {
+          let metaLabel = '-';
+          if (d.r2Key) {
+            metaLabel = `R2: ${d.r2Key}`;
+          } else if (d.metadata && Object.keys(d.metadata).length > 0) {
+            metaLabel = d.metadata.url || JSON.stringify(d.metadata);
+          } else {
+            metaLabel = 'Direct Text Ingest (PostgreSQL)';
+          }
+
+          return `
+          <tr class="border-b border-nearblack/20 hover:bg-ivory">
+            <td class="p-3 font-bold text-sm text-nearblack">${d.title}</td>
+            <td class="p-3"><span class="px-2 py-0.5 border border-nearblack font-bold uppercase bg-bordercream/60">${d.sourceType}</span></td>
+            <td class="p-3 text-terracotta font-bold">${d.chunkCount} Chunks</td>
+            <td class="p-3 text-nearblack/70 italic text-[11px] truncate max-w-[220px]">${metaLabel}</td>
+            <td class="p-3 text-nearblack/60">${d.createdAt ? d.createdAt.substring(0, 10) : '-'}</td>
+            <td class="p-3 text-right flex gap-1 justify-end">
+              <button onclick="openDocModal('${d.id}')" class="btn-terracotta px-2 py-1 text-[10px] font-bold uppercase">Chunks</button>
+              <button onclick="deleteDocument('${d.id}')" class="bg-rose-600 text-white border border-nearblack px-2 py-1 text-[10px] font-bold uppercase hover:bg-rose-700">Hapus</button>
+            </td>
+          </tr>
+        `;}).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-rose-600 font-bold">Gagal memuat dokumen.</td></tr>';
+      }
+    }
+
+    async function openDocModal(docId) {
+      const res = await fetchApi(`/admin/documents/${docId}`);
+      if (res.ok) {
+        const doc = await res.json();
+        document.getElementById('docModalTitle').innerText = `Chunks: ${doc.title}`;
+        document.getElementById('docModalBody').innerHTML = `
+          <div class="bg-parchment p-3 border border-nearblack text-[11px] mb-3">
+            <p><b>Sumber:</b> ${doc.sourceType} | <b>Total Chunks:</b> ${doc.chunks.length}</p>
+            ${doc.r2Key ? `<p><b>Cloudflare R2 Storage Key:</b> <code>${doc.r2Key}</code></p>` : ''}
+          </div>
+          ${doc.chunks.map((c, i) => `
+            <div class="card-brutal p-3 space-y-1">
+              <div class="flex justify-between items-center text-[10px] font-bold text-terracotta border-b border-nearblack/10 pb-1">
+                <span>CHUNK #${i + 1} ${c.section ? '— ' + c.section : ''}</span>
+                <span>${c.tokenCount} Token</span>
+              </div>
+              <p class="whitespace-pre-wrap text-[11px]">${c.content}</p>
+            </div>
+          `).join('')}
+        `;
+        document.getElementById('docModal').showModal();
+      }
+    }
+
+    async function deleteDocument(docId) {
+      if (!confirm('Hapus dokumen ini dan seluruh chunk embedding-nya?')) return;
+      const res = await fetchApi(`/admin/documents/${docId}`, { method: 'DELETE' });
+      if (res.ok) {
+        loadDocuments();
+        loadStats();
+      }
+    }
+
+    async function handleIngestText(e) {
+      e.preventDefault();
+      const title = document.getElementById('textTitleInput').value.trim();
+      const content = document.getElementById('textContentInput').value.trim();
+      const resDiv = document.getElementById('textIngestResult');
+      resDiv.classList.remove('hidden');
+      resDiv.innerHTML = 'Mengekstrak dan meng-embed teks...';
+
+      try {
+        const res = await fetchApi('/admin/ingest-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content, source_type: 'manual' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resDiv.innerHTML = `✅ <b>SUKSES!</b> Dokumen <b>${data.title}</b> terbuat dengan <b>${data.chunks_created} Chunks</b>.`;
+          document.getElementById('textTitleInput').value = '';
+          document.getElementById('textContentInput').value = '';
+          loadStats();
+          loadDocuments();
+        } else {
+          resDiv.innerHTML = `❌ <b>GAGAL:</b> ${data.detail || 'Ingestion error'}`;
+        }
+      } catch (err) {
+        resDiv.innerHTML = `❌ <b>ERROR:</b> ${err.message}`;
+      }
+    }
+
+    let activeLeadId = null;
+    async function loadLeads() {
+      const tbody = document.getElementById('leadsTableBody');
+      tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-nearblack/50">Memuat data leads...</td></tr>';
+      try {
+        const res = await fetchApi('/admin/leads');
+        if (!res.ok) return;
+        const leads = await res.json();
+
+        const filter = document.getElementById('leadStatusFilter').value;
+        const filtered = leads.filter(l => filter === 'all' ? true : l.status === filter);
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-nearblack/50">Tidak ada leads.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(l => `
+          <tr class="border-b border-nearblack/20 hover:bg-ivory">
+            <td class="p-3"><span class="px-2 py-0.5 border border-nearblack font-bold uppercase ${l.status === 'new' ? 'bg-amber-400 text-nearblack' : l.status === 'contacted' ? 'bg-blue-400 text-nearblack' : l.status === 'won' ? 'bg-emerald-400 text-nearblack' : 'bg-rose-400 text-white'}">${l.status}</span></td>
+            <td class="p-3 font-bold">${l.service || '-'}</td>
+            <td class="p-3 max-w-xs truncate">${l.description || '-'}</td>
+            <td class="p-3 font-bold">${l.budget || '-'}</td>
+            <td class="p-3">${l.deadline || '-'}</td>
+            <td class="p-3 text-terracotta font-bold">${l.contact || '-'}</td>
+            <td class="p-3 text-nearblack/60">${l.created_at ? l.created_at.substring(0, 16).replace('T', ' ') : '-'}</td>
+            <td class="p-3 text-right">
+              <button onclick="openLeadModal('${l.id}')" class="btn-terracotta px-2 py-1 text-[10px] font-bold uppercase">Detail</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-rose-600 font-bold">Gagal memuat data leads.</td></tr>';
+      }
+    }
+
+    async function openLeadModal(id) {
+      activeLeadId = id;
+      const res = await fetchApi(`/admin/leads/${id}`);
+      if (res.ok) {
+        const l = await res.json();
+        document.getElementById('leadModalBody').innerHTML = `
+          <p><b>Status:</b> ${l.status.toUpperCase()}</p>
+          <p><b>Layanan:</b> ${l.service}</p>
+          <p><b>Deskripsi:</b> ${l.description}</p>
+          <p><b>Budget:</b> ${l.budget} | <b>Deadline:</b> ${l.deadline}</p>
+          <p class="text-terracotta font-bold"><b>Kontak:</b> ${l.contact}</p>
+          <p class="text-nearblack/50"><b>Dibuat:</b> ${l.created_at}</p>
+        `;
+        document.getElementById('leadModal').showModal();
+      }
+    }
+
+    async function updateStatus(newStatus) {
+      if (!activeLeadId) return;
+      const res = await fetchApi(`/admin/leads/${activeLeadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        document.getElementById('leadModal').close();
+        loadLeads();
+        loadStats();
+      }
+    }
+
+    async function handleIngestRepo(e) {
+      e.preventDefault();
+      const url = document.getElementById('repoUrlInput').value.trim();
+      const resDiv = document.getElementById('repoIngestResult');
+      resDiv.classList.remove('hidden');
+      resDiv.innerHTML = 'Memproses ingestion repositori GitHub... Mohon tunggu...';
+
+      try {
+        const res = await fetchApi('/admin/ingest-repo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resDiv.innerHTML = `✅ <b>SUKSES!</b> Repo <b>${data.title}</b> ter-ingest dengan <b>${data.chunks_created} Chunks</b>.`;
+          loadStats();
+          loadDocuments();
+        } else {
+          resDiv.innerHTML = `❌ <b>GAGAL:</b> ${data.detail || 'Ingestion error'}`;
+        }
+      } catch (err) {
+        resDiv.innerHTML = `❌ <b>ERROR:</b> ${err.message}`;
+      }
+    }
+
+    async function handleUploadFile(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files.length) return;
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      const resDiv = document.getElementById('uploadResult');
+      resDiv.classList.remove('hidden');
+      resDiv.innerHTML = 'Mengunggah dan mengekstrak berkas...';
+
+      try {
+        const res = await fetchApi('/admin/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resDiv.innerHTML = `✅ <b>SUKSES!</b> Berkas <b>${data.title}</b> terbuat dengan <b>${data.chunks_created} Chunks</b>. Key R2: ${data.r2_key || '-'}`;
+          loadStats();
+          loadDocuments();
+        } else {
+          resDiv.innerHTML = `❌ <b>GAGAL:</b> ${data.detail || 'Upload error'}`;
+        }
+      } catch (err) {
+        resDiv.innerHTML = `❌ <b>ERROR:</b> ${err.message}`;
+      }
+    }
+
+    let activeConfessionId = null;
+    async function loadConfessions() {
+      const tbody = document.getElementById('confessionsTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-nearblack/50">Memuat data confessions...</td></tr>';
+      try {
+        const res = await fetchApi('/admin/confessions');
+        if (!res.ok) return;
+        const list = await res.json();
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-nearblack/50">Belum ada pesan anonim.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = list.map(c => {
+          const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleString('id-ID', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '-';
+          return `
+          <tr class="border-b border-nearblack/20 hover:bg-ivory">
+            <td class="p-3 text-nearblack/80 font-bold">${dateStr}</td>
+            <td class="p-3 font-mono">${c.ipAddress}</td>
+            <td class="p-3 max-w-xs font-semibold">${c.message}</td>
+            <td class="p-3 italic text-terracotta">${c.reply || 'Belum dibalas'}</td>
+            <td class="p-3 text-right flex gap-1 justify-end">
+              <button onclick="openReplyModal('${c.id}', '${escapeHtml(c.message)}')" class="btn-terracotta px-2 py-1 text-[10px] font-bold uppercase">Balas</button>
+              <button onclick="deleteConfession('${c.id}')" class="bg-rose-600 text-white border border-nearblack px-2 py-1 text-[10px] font-bold uppercase">Hapus</button>
+            </td>
+          </tr>
+        `;}).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-rose-600 font-bold">Gagal memuat confessions.</td></tr>';
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    function openReplyModal(id, msg) {
+      activeConfessionId = id;
+      document.getElementById('replyModalBody').innerHTML = `<p><b>Pesan Pengunjung:</b> "${msg}"</p>`;
+      document.getElementById('replyInput').value = '';
+      document.getElementById('replyModal').showModal();
+    }
+
+    async function submitReply() {
+      const replyText = document.getElementById('replyInput').value.trim();
+      if (!replyText || !activeConfessionId) return;
+
+      const res = await fetchApi(`/admin/confessions/${activeConfessionId}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reply: replyText })
+      });
+
+      if (res.ok) {
+        document.getElementById('replyModal').close();
+        loadConfessions();
+      }
+    }
+
+    async function deleteConfession(id) {
+      if (!confirm('Hapus pesan anonim ini?')) return;
+      const res = await fetchApi(`/admin/confessions/${id}`, { method: 'DELETE' });
+      if (res.ok) loadConfessions();
+    }
+
+    async function loadPrompts() {
+      const container = document.getElementById('promptsListContainer');
+      container.innerHTML = '<p class="text-xs mono text-nearblack/50">Memuat prompt...</p>';
+      try {
+        const res = await fetchApi('/admin/system-prompts');
+        if (!res.ok) return;
+        const prompts = await res.json();
+        if (prompts.length === 0) {
+          container.innerHTML = '<p class="text-xs mono text-nearblack/50">Belum ada system prompt kustom di DB. Elara menggunakan prompt bawaan default.</p>';
+          return;
+        }
+
+        container.innerHTML = prompts.map(p => `
+          <div class="card-brutal p-4 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-sm font-heading">${p.name}</span>
+              ${p.isActive ? '<span class="bg-emerald-400 text-nearblack text-[10px] font-bold px-2 py-0.5 border border-nearblack">AKTIF SEKARANG</span>' : `<button onclick="activatePrompt('${p.id}')" class="btn-terracotta text-[10px] px-2 py-0.5 font-bold">Aktifkan</button>`}
+            </div>
+            <p class="text-xs text-nearblack/70">${p.description || '-'}</p>
+            <pre class="bg-parchment p-2 text-[10px] max-h-24 overflow-y-auto border border-nearblack/20">${p.prompt}</pre>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = '<p class="text-xs mono text-rose-600 font-bold">Gagal memuat system prompts.</p>';
+      }
+    }
+
+    async function activatePrompt(id) {
+      const res = await fetchApi(`/admin/system-prompts/${id}/activate`, { method: 'POST' });
+      if (res.ok) loadPrompts();
+    }
+
+    async function deactivateAllPrompts() {
+      const res = await fetchApi('/admin/system-prompts/deactivate-all', { method: 'POST' });
+      if (res.ok) {
+        alert('Seluruh prompt kustom dinonaktifkan. Elara menggunakan prompt bawaan default.');
+        loadPrompts();
+      }
+    }
+
+    async function handleCreatePrompt(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('promptName').value.trim(),
+        description: document.getElementById('promptDesc').value.trim(),
+        prompt: document.getElementById('promptContent').value.trim(),
+        is_active: document.getElementById('promptIsActive').checked,
+      };
+
+      const res = await fetchApi('/admin/system-prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert('Prompt berhasil disimpan!');
+        document.getElementById('promptName').value = '';
+        document.getElementById('promptDesc').value = '';
+        document.getElementById('promptContent').value = '';
+        document.getElementById('promptIsActive').checked = false;
+        loadPrompts();
+      }
+    }
+  </script>
+</body>
+</html>
