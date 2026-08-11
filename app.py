@@ -6,12 +6,18 @@ Run with: uv run uvicorn app:app --reload
 
 from __future__ import annotations
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 
 from config import settings, get_pool, close_pool

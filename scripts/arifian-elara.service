@@ -1,0 +1,15 @@
+[Unit]
+Description=Elara Public Backend (FastAPI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/arifian/projects/elara
+ExecStart=/home/arifian/projects/elara/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=3
+Environment=HERMES_HOME=
+
+[Install]
+WantedBy=default.target

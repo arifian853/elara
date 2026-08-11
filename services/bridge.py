@@ -8,6 +8,7 @@ Uses httpx (async) — no telegram library needed.
 
 from __future__ import annotations
 
+import html as html_lib
 import logging
 
 import httpx
@@ -45,6 +46,7 @@ async def send_telegram_message(
         return False
 
     url = TELEGRAM_API_URL.format(token=settings.telegram_bot_token)
+    text = html_lib.escape(text)
     payload = {
         "chat_id": target_chat_id,
         "text": text,
@@ -65,5 +67,5 @@ async def send_telegram_message(
             return False
 
     except Exception as e:
-        logger.error(f"Telegram send failed: {e}")
+        logger.exception(f"Telegram send failed: {e}")
         return False
