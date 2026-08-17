@@ -150,33 +150,31 @@ async def _fts_search(
     """
     Search chunks using PostgreSQL full-text search (GIN index).
 
-    Uses 'simple' config (no stemming) for multilingual ID/EN support.
+    Uses 'simple' config with plainto_tsquery for safe, robust multilingual ID/EN support.
     Returns list of dicts with: chunk_id, content, section, fts_rank, document_title.
     """
-    pool = await get_pool()
-
-    # Build tsquery: split words and join with '&' (AND)
-    words = query.strip().split()
-    if not words:
+    clean_query = query.strip()
+    if not clean_query:
         return []
-    tsquery = " & ".join(words)
+
+    pool = await get_pool()
 
     sql = """
         SELECT
             c.id AS chunk_id,
             c.content,
             c.section,
-            ts_rank(to_tsvector('simple', c.content), to_tsquery('simple', $1)) AS fts_rank,
+            ts_rank(to_tsvector('simple', c.content), plainto_tsquery('simple', $1)) AS fts_rank,
             d.title AS document_title
         FROM chunks c
         JOIN documents d ON d.id = c.document_id
-        WHERE to_tsvector('simple', c.content) @@ to_tsquery('simple', $1)
+        WHERE to_tsvector('simple', c.content) @@ plainto_tsquery('simple', $1)
         ORDER BY fts_rank DESC
         LIMIT $2
     """
 
     async with pool.acquire() as conn:
-        rows = await conn.fetch(sql, tsquery, top_k)
+        rows = await conn.fetch(sql, clean_query, top_k)
 
     return [
         {
