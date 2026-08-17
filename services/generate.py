@@ -148,8 +148,9 @@ async def generate_response(
     # Add conversation history (last 6 turns)
     if history:
         for turn in history[-6:]:
+            role = "assistant" if turn.get("role") in ("assistant", "model") else "user"
             messages.append({
-                "role": turn.get("role", "user"),
+                "role": role,
                 "content": turn.get("content", ""),
             })
 
@@ -211,8 +212,9 @@ async def generate_response_stream(
 
     if history:
         for turn in history[-6:]:
+            role = "assistant" if turn.get("role") in ("assistant", "model") else "user"
             messages.append({
-                "role": turn.get("role", "user"),
+                "role": role,
                 "content": turn.get("content", ""),
             })
 
