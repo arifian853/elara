@@ -61,7 +61,8 @@ async def rerank_chunks(
     # Build numbered chunk text for the prompt
     chunks_lines = []
     for i, c in enumerate(chunks, 1):
-        preview = c["content"][:300]  # Limit chunk preview to save tokens
+        section_prefix = f"[{c['section']}] " if c.get("section") else ""
+        preview = (section_prefix + c["content"])[:350]  # Limit chunk preview to save tokens
         chunks_lines.append(f"CHUNK {i}:\n{preview}")
     chunks_text = "\n\n".join(chunks_lines)
 

@@ -43,42 +43,58 @@ class RetrievedChunk:
     document_title: str
 
 
+import asyncio
+
 # ── Embedding ───────────────────────────────────────────────────────
 
-async def embed_query(query: str) -> list[float]:
+async def embed_query(query: str, max_retries: int = 3) -> list[float]:
     """
-    Generate embedding for a query string via Gemini Embedding 2.
+    Generate embedding for a query string via Gemini Embedding 2 with retry.
 
     Uses task_type="RETRIEVAL_QUERY" for query-optimized embeddings.
     """
     client = _get_genai_client()
-    response = client.models.embed_content(
-        model=settings.embedding_model,
-        contents=query,
-        config={
-            "output_dimensionality": settings.embedding_dimensions,
-            "task_type": "RETRIEVAL_QUERY",
-        },
-    )
-    return response.embeddings[0].values
+    for attempt in range(max_retries):
+        try:
+            response = client.models.embed_content(
+                model=settings.embedding_model,
+                contents=query,
+                config={
+                    "output_dimensionality": settings.embedding_dimensions,
+                    "task_type": "RETRIEVAL_QUERY",
+                },
+            )
+            return response.embeddings[0].values
+        except Exception as e:
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1.5 * (attempt + 1))
+            else:
+                raise e
 
 
-async def embed_document(text: str) -> list[float]:
+async def embed_document(text: str, max_retries: int = 3) -> list[float]:
     """
-    Generate embedding for a document chunk via Gemini Embedding 2.
+    Generate embedding for a document chunk via Gemini Embedding 2 with retry.
 
     Uses task_type="RETRIEVAL_DOCUMENT" for document-optimized embeddings.
     """
     client = _get_genai_client()
-    response = client.models.embed_content(
-        model=settings.embedding_model,
-        contents=text,
-        config={
-            "output_dimensionality": settings.embedding_dimensions,
-            "task_type": "RETRIEVAL_DOCUMENT",
-        },
-    )
-    return response.embeddings[0].values
+    for attempt in range(max_retries):
+        try:
+            response = client.models.embed_content(
+                model=settings.embedding_model,
+                contents=text,
+                config={
+                    "output_dimensionality": settings.embedding_dimensions,
+                    "task_type": "RETRIEVAL_DOCUMENT",
+                },
+            )
+            return response.embeddings[0].values
+        except Exception as e:
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1.5 * (attempt + 1))
+            else:
+                raise e
 
 
 # ── Vector Search (pgvector) ───────────────────────────────────────
@@ -282,15 +298,24 @@ async def hybrid_retrieve(
     # Step 5: RRF fusion
     merged = _rrf_fusion(vector_results, fts_results)
 
-    # Step 6: Return top-K
-    return [
-        RetrievedChunk(
-            chunk_id=r["chunk_id"],
-            content=r["content"],
-            section=r["section"],
-            cosine_sim=r["cosine_sim"],
-            rrf_score=r["rrf_score"],
-            document_title=r["document_title"],
-        )
-        for r in merged[:top_k]
-    ]
+    # Step 6: Return top-K unique content chunks
+    unique_results = []
+    seen_contents = set()
+    for r in merged:
+        normalized_content = r["content"].strip()
+        if normalized_content not in seen_contents:
+            seen_contents.add(normalized_content)
+            unique_results.append(
+                RetrievedChunk(
+                    chunk_id=r["chunk_id"],
+                    content=r["content"],
+                    section=r["section"],
+                    cosine_sim=r["cosine_sim"],
+                    rrf_score=r["rrf_score"],
+                    document_title=r["document_title"],
+                )
+            )
+        if len(unique_results) >= top_k:
+            break
+
+    return unique_results
