@@ -70,9 +70,12 @@ async def run_rag_pipeline(
             "siang", "selamat siang", "sore", "selamat sore", "malam",
             "selamat malam", "siapa kamu", "siapa elara", "kamu siapa",
             "elara", "apa kabar", "terima kasih", "makasih", "thanks",
-            "thank you", "permisi", "tes", "test", "ping"
+            "thank you", "permisi", "tes", "test", "ping", "siapa arifian",
+            "tentang arifian", "profil", "bantu apa", "bisa apa", "keahlian",
+            "skill", "proyek", "project", "portofolio", "portfolio", "layanan",
+            "jasa", "kontak", "hubungi", "bantuan", "konsultasi"
         }
-        is_greeting = any(k in msg_clean for k in greeting_keywords) or len(msg_clean.split()) <= 2
+        is_greeting = any(k in msg_clean for k in greeting_keywords) or len(msg_clean.split()) <= 3
 
         if is_greeting:
             logger.info("Conversational greeting detected, generating warm persona response without KB chunks")

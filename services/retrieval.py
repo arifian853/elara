@@ -244,16 +244,16 @@ async def hybrid_retrieve(
 ) -> list[RetrievedChunk] | None:
     """
     Hybrid retrieval pipeline:
-      1. Embed query
-      2. Vector search (top-20)
-      3. Threshold check on top-1 cosine sim
-      4. FTS search (top-20)
+      1. Embed query via Gemini Embedding 2
+      2. Vector search (pgvector top-20)
+      3. Full-Text Search (FTS top-20)
+      4. Threshold check: passes if top vector similarity >= threshold OR FTS keyword match found
       5. RRF fusion
       6. Return top-K merged chunks
 
     Returns:
-        List of RetrievedChunk if threshold passes.
-        None if top-1 cosine sim < threshold (caller should use fallback).
+        List of RetrievedChunk if relevant context is found.
+        None if top-1 cosine sim < threshold and no FTS match (caller should use fallback).
     """
     if top_k is None:
         top_k = settings.retrieval_top_k
@@ -266,20 +266,18 @@ async def hybrid_retrieve(
     # Step 2: Vector search
     vector_results = await _vector_search(query_embedding, top_k=20)
 
-    if not vector_results:
+    # Step 3: FTS search
+    fts_results = await _fts_search(query, top_k=20)
+
+    if not vector_results and not fts_results:
         return None  # No chunks in DB at all
 
-    # Step 3: THRESHOLD CHECK on top-1 cosine similarity
-    #   [KRITIS] This is applied to the raw cosine sim from pgvector,
-    #   NOT to the RRF fusion output.
-    top1_cosine_sim = vector_results[0]["cosine_sim"]
+    top1_cosine_sim = vector_results[0]["cosine_sim"] if vector_results else 0.0
+    has_fts_matches = len(fts_results) > 0
 
-    if top1_cosine_sim < similarity_threshold:
-        # Below threshold → bypass RRF & reranker, caller returns fallback
+    # Step 4: Relevance check (Passes if vector similarity >= threshold OR FTS keyword match exists)
+    if top1_cosine_sim < similarity_threshold and not has_fts_matches:
         return None
-
-    # Step 4: FTS search (only if threshold passes)
-    fts_results = await _fts_search(query, top_k=20)
 
     # Step 5: RRF fusion
     merged = _rrf_fusion(vector_results, fts_results)

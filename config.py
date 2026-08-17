@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     # ── RAG tuning ──────────────────────────────────────────────────
     retrieval_top_k: int = 10
     rerank_top_k: int = 3
-    similarity_threshold: float = 0.6
+    similarity_threshold: float = 0.35
     chunk_size: int = 800
     chunk_overlap: float = 0.1
 
