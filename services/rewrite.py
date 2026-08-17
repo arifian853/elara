@@ -58,8 +58,9 @@ async def rewrite_query(message: str, history: list[dict]) -> str:
     # Include last 4 turns of history for context
     recent = history[-4:]
     for turn in recent:
+        role = "assistant" if turn.get("role") in ("assistant", "model") else "user"
         messages.append({
-            "role": turn.get("role", "user"),
+            "role": role,
             "content": turn.get("content", ""),
         })
 
