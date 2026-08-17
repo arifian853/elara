@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 import hashlib
 import os
 
-SECRET_KEY = settings.admin_token or "AutumnNymph_Elara_Secret_JWT_Key_2026"
+SECRET_KEY = settings.admin_token or "elara_jwt_secret_signing_key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

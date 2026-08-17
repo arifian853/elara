@@ -59,7 +59,7 @@ arifian-ai-v2/
 
 ```sql
 -- 1. Setup Role 'elara' & Hak Akses Database
-create role elara with login password 'AutumnNymph_Elara01';
+create role elara with login password 'YOUR_STRONG_PASSWORD_HERE';
 
 grant connect on database postgres to elara;
 grant usage on schema public to elara;
@@ -132,7 +132,7 @@ grant usage, select, update on all sequences in schema public to elara;
 ```env
 # Database Connection (Async connection via asyncpg / Connection Pooler)
 # Menggunakan role custom 'elara' — TANPA SUPABASE_SERVICE_KEY & SUPABASE_URL
-SUPABASE_DB_URL=postgresql://elara:AutumnNymph_Elara01@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+SUPABASE_DB_URL=postgresql://postgres.your-project:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 
 # Groq (Generation + Query Rewrite)
 GROQ_API_KEY=gsk_...
@@ -157,8 +157,8 @@ R2_REGION=auto
 GITHUB_TOKEN=ghp_...
 
 # Telegram Bridge (Outbound Only)
-TELEGRAM_BOT_TOKEN=8812563214:AAH...
-OWNER_CHAT_ID=990832448
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+OWNER_CHAT_ID=your_telegram_chat_id_here
 
 # Security & CORS Settings
 ADMIN_TOKEN=openssl_rand_hex_24_generated_token_here

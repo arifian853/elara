@@ -23,11 +23,15 @@ import urllib.parse
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-API_BASE_URL = os.environ.get("ELARA_API_URL", "http://localhost:8001")
-ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "248a7eb38c2c5940797c24cb2f8cb3a194fcfd2199b34cf2")
+API_BASE_URL = os.environ.get("ELARA_API_URL", "http://localhost:8000")
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 
 
 def _make_request(url: str, method: str = "GET", payload: dict | None = None) -> dict:
+    if not ADMIN_TOKEN:
+        print("[ERROR] Environment variable ADMIN_TOKEN is not configured.")
+        sys.exit(1)
+
     headers = {
         "X-Admin-Token": ADMIN_TOKEN,
         "Content-Type": "application/json",
